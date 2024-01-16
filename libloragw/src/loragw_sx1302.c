@@ -1143,10 +1143,15 @@ int sx1302_lora_syncword(bool public, uint8_t lora_service_sf) {
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-uint32_t sx1302_timestamp_counter(bool pps) {
+int sx1302_timestamp_counter(bool pps, uint32_t *cnt) {
     uint32_t inst_cnt, pps_cnt;
-    timestamp_counter_get(&counter_us, &inst_cnt, &pps_cnt);
-    return ((pps == true) ? pps_cnt : inst_cnt);
+    CHECK_NULL(cnt);
+    if(timestamp_counter_get(&counter_us, &inst_cnt, &pps_cnt) != LGW_REG_SUCCESS) {
+        printf("ERROR: failed to get timestamp counter\n");
+        return LGW_REG_ERROR;
+    }
+    *cnt = ((pps == true) ? pps_cnt : inst_cnt);
+    return LGW_REG_SUCCESS;
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */

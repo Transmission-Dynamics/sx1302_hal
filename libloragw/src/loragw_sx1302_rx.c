@@ -34,10 +34,12 @@ License: Revised BSD License, see LICENSE.TXT file include in the project
     #define DEBUG_MSG(str)                fprintf(stdout, str)
     #define DEBUG_PRINTF(fmt, args...)    fprintf(stdout, fmt, args)
     #define CHECK_NULL(a)                if(a==NULL){fprintf(stderr,"%s:%d: ERROR: NULL POINTER AS ARGUMENT\n", __FUNCTION__, __LINE__);return LGW_REG_ERROR;}
+    #define CHECK_ERR(a)                  if(a!=0){fprintf(stderr,"%s:%d: ERROR: FAIL\n", __FUNCTION__, __LINE__);return LGW_REG_ERROR;}
 #else
     #define DEBUG_MSG(str)
     #define DEBUG_PRINTF(fmt, args...)
     #define CHECK_NULL(a)                if(a==NULL){return LGW_REG_ERROR;}
+    #define CHECK_ERR(a)                  if(a!=0){return LGW_REG_ERROR;}
 #endif
 
 #define SX1302_PKT_PAYLOAD_LENGTH(buffer, start_index)          TAKE_N_BITS_FROM(buffer[start_index +  2], 0, 8)
@@ -127,7 +129,7 @@ int rx_buffer_del(rx_buffer_t * self) {
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
 int rx_buffer_fetch(rx_buffer_t * self) {
-    int i, res;
+    int i, res, err;
     uint8_t buff[2];
     uint8_t payload_len;
     uint16_t next_pkt_idx;
@@ -138,11 +140,13 @@ int rx_buffer_fetch(rx_buffer_t * self) {
     CHECK_NULL(self);
 
     /* Check if there is data in the FIFO */
-    lgw_reg_rb(SX1302_REG_RX_TOP_RX_BUFFER_NB_BYTES_MSB_RX_BUFFER_NB_BYTES, buff, sizeof buff);
+    err = lgw_reg_rb(SX1302_REG_RX_TOP_RX_BUFFER_NB_BYTES_MSB_RX_BUFFER_NB_BYTES, buff, sizeof buff);
+    CHECK_ERR(err);
     nb_bytes_1 = (buff[0] << 8) | (buff[1] << 0);
 
     /* Workaround for multi-byte read issue: read again and ensure new read is not lower than the previous one */
-    lgw_reg_rb(SX1302_REG_RX_TOP_RX_BUFFER_NB_BYTES_MSB_RX_BUFFER_NB_BYTES, buff, sizeof buff);
+    err = lgw_reg_rb(SX1302_REG_RX_TOP_RX_BUFFER_NB_BYTES_MSB_RX_BUFFER_NB_BYTES, buff, sizeof buff);
+    CHECK_ERR(err);
     nb_bytes_2 = (buff[0] << 8) | (buff[1] << 0);
 
     self->buffer_size = (nb_bytes_2 > nb_bytes_1) ? nb_bytes_2 : nb_bytes_1;

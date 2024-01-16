@@ -249,9 +249,10 @@ int sx1302_gps_enable(bool enable);
 /**
 @brief Get the current SX1302 internal counter value
 @param pps      True for getting the counter value at last PPS
-@return the counter value in mciroseconds (32-bits)
+@param cnt      A pointer to load to counter value in mciroseconds (32-bits)
+@return LGW_REG_SUCCESS if success, LGW_REG_ERROR otherwise
 */
-uint32_t sx1302_timestamp_counter(bool pps);
+int sx1302_timestamp_counter(bool pps, uint32_t *cnt);
 
 /**
 @brief Load firmware to AGC MCU memory

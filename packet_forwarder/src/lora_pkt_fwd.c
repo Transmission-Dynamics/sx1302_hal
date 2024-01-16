@@ -2531,6 +2531,7 @@ static int get_tx_gain_lut_index(uint8_t rf_chain, int8_t rf_power, uint8_t * lu
 
 void thread_down(void) {
     int i; /* loop variables */
+    int err; /* return codes */
 
     /* configuration and metadata for an outbound packet */
     struct lgw_pkt_tx_s txpkt;
@@ -2800,8 +2801,12 @@ void thread_down(void) {
 
                     /* Insert beacon packet in JiT queue */
                     pthread_mutex_lock(&mx_concent);
-                    lgw_get_instcnt(&current_concentrator_time);
+                    err = lgw_get_instcnt(&current_concentrator_time);
                     pthread_mutex_unlock(&mx_concent);
+                    if (err != LGW_HAL_SUCCESS) {
+                        MSG("ERROR: failed to read concentrator counter value\n");
+                        exit(EXIT_FAILURE);
+                    }
                     jit_result = jit_enqueue(&jit_queue[0], current_concentrator_time, &beacon_pkt, JIT_PKT_TYPE_BEACON);
                     if (jit_result == JIT_ERROR_OK) {
                         /* update stats */
@@ -3195,8 +3200,12 @@ void thread_down(void) {
             /* insert packet to be sent into JIT queue */
             if (jit_result == JIT_ERROR_OK) {
                 pthread_mutex_lock(&mx_concent);
-                lgw_get_instcnt(&current_concentrator_time);
+                err = lgw_get_instcnt(&current_concentrator_time);
                 pthread_mutex_unlock(&mx_concent);
+                if (err != LGW_HAL_SUCCESS) {
+                    MSG("ERROR: failed to read concentrator counter value\n");
+                    exit(EXIT_FAILURE);
+                }
                 jit_result = jit_enqueue(&jit_queue[txpkt.rf_chain], current_concentrator_time, &txpkt, downlink_type);
                 if (jit_result != JIT_ERROR_OK) {
                     printf("ERROR: Packet REJECTED (jit error=%d)\n", jit_result);
@@ -3256,8 +3265,12 @@ void thread_jit(void) {
         for (i = 0; i < LGW_RF_CHAIN_NB; i++) {
             /* transfer data and metadata to the concentrator, and schedule TX */
             pthread_mutex_lock(&mx_concent);
-            lgw_get_instcnt(&current_concentrator_time);
+            result = lgw_get_instcnt(&current_concentrator_time);
             pthread_mutex_unlock(&mx_concent);
+            if (result != LGW_HAL_SUCCESS) {
+                MSG("ERROR: failed to read concentrator counter value\n");
+                exit(EXIT_FAILURE);
+            }
             jit_result = jit_peek(&jit_queue[i], current_concentrator_time, &pkt_index);
             if (jit_result == JIT_ERROR_OK) {
                 if (pkt_index > -1) {

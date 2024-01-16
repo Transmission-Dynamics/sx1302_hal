@@ -1549,7 +1549,9 @@ int lgw_get_trigcnt(uint32_t* trig_cnt_us) {
 
     CHECK_NULL(trig_cnt_us);
 
-    *trig_cnt_us = sx1302_timestamp_counter(true);
+    if(sx1302_timestamp_counter(true, trig_cnt_us) != LGW_REG_SUCCESS) {
+        return LGW_HAL_ERROR;
+    }
 
     DEBUG_PRINTF(" --- %s\n", "OUT");
 
@@ -1563,7 +1565,9 @@ int lgw_get_instcnt(uint32_t* inst_cnt_us) {
 
     CHECK_NULL(inst_cnt_us);
 
-    *inst_cnt_us = sx1302_timestamp_counter(false);
+    if(sx1302_timestamp_counter(false, inst_cnt_us) != LGW_REG_SUCCESS) {
+        return LGW_HAL_ERROR;
+    }
 
     DEBUG_PRINTF(" --- %s\n", "OUT");
 
