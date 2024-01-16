@@ -26,6 +26,7 @@ License: Revised BSD License, see LICENSE.TXT file include in the project
 #include <string.h>     /* memset */
 #include <errno.h>      /* Error number definitions */
 #include <termios.h>    /* POSIX terminal control definitions */
+#include <sys/stat.h>   /* file status */
 
 #include "loragw_mcu.h"
 #include "loragw_aux.h"
@@ -282,6 +283,17 @@ int read_ack(int fd, uint8_t * hdr, uint8_t * buf, size_t buf_size) {
     if (n == -1) {
         perror("ERROR: Unable to read /dev/ttyACMx - ");
         return -1;
+    } else if (n == 0) {
+        /* Nothing was read, port might have been disconnected */
+        struct stat fileStat;
+        if (fstat(fd, &fileStat) < 0) {
+            perror("ERROR: Unable to stat /dev/ttyACMx - ");
+            return -1;
+        }
+        if (fileStat.st_nlink == 0) {
+            printf("ERROR: /dev/ttyACMx is not connected\n");
+            return -1;
+        }
     } else {
 #if DEBUG_MCU == 1
         gettimeofday(&read_tv, NULL);
@@ -328,6 +340,17 @@ int read_ack(int fd, uint8_t * hdr, uint8_t * buf, size_t buf_size) {
             if (n == -1) {
                 perror("ERROR: Unable to read /dev/ttyACMx - ");
                 return -1;
+            } else if(n == 0) {
+                /* Nothing was read, port might have been disconnected */
+                struct stat fileStat;
+                if (fstat(fd, &fileStat) < 0) {
+                    perror("ERROR: Unable to stat /dev/ttyACMx - ");
+                    return -1;
+                }
+                if (fileStat.st_nlink == 0) {
+                    printf("ERROR: /dev/ttyACMx is not connected\n");
+                    return -1;
+                }
             } else {
 #if DEBUG_MCU == 1
                 gettimeofday(&read_tv, NULL);
